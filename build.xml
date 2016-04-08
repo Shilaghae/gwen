@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+
+<project name="gwen-library" xmlns:ivy="antlib:org.apache.ivy.ant"
+	default="resolve">
+
+
+	<property name="src.dir" location="src" />
+	<property name="src.test.dir" location="src/main/test" />
+	<property name="results.test.dir" location="artifacts/junit" />
+
+
+    <property name="publish.version" value="0.2" />
+
+	<property name="build.dir" value="${basedir}/lib" />
+	<property name="jar.dir" value="${basedir}/build/jar" />
+
+	<property name="ivy.lib.dir" value="${basedir}/lib" />
+
+	<property name="ivy.install.version" value="2.1.0-rc2" />
+	<condition property="ivy.home" value="${env.IVY_HOME}">
+		<isset property="env.IVY_HOME" />
+	</condition>
+	<property name="ivy.home" value="${user.home}/.ant" />
+	<property name="ivy.jar.dir" value="${ivy.home}/lib" />
+	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+
+	<property name="build.classes" location="build/classes" />
+
+	<target name="download-ivy" unless="offline">
+
+		<mkdir dir="${ivy.jar.dir}" />
+		<!-- download Ivy from web site so that it can be used even without any 
+			special installation -->
+		<get
+			src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"
+			dest="${ivy.jar.file}" usetimestamp="true" />
+	</target>
+
+	<target name="init-ivy" depends="download-ivy">
+		<!-- try to load ivy here from ivy home, in case the user has not already 
+			dropped it into ant's lib dir (note that the latter copy will always take 
+			precedence). We will not fail as long as local lib dir exists (it may be 
+			empty) and ivy is in at least one of ant's lib dir or the local lib dir. -->
+		<path id="ivy.lib.path">
+			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
+
+		</path>
+		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant"
+			classpathref="ivy.lib.path" />
+	</target>
+
+	<target name="resolve" depends="init-ivy">
+		<ivy:configure file="ivysettings.xml" />
+		<ivy:resolve file="ivy.xml" />
+		<ivy:retrieve />
+	</target>
+
+	<path id="lib.path.id">
+		<fileset dir="${ivy.lib.dir}" />
+	</path>
+
+
+	<target name="clean">
+		<delete dir="build" />
+		<ivy:cleancache />
+	</target>
+
+	<target name="compile" depends="resolve,clean">
+		<mkdir dir="${build.classes}" />
+		<mkdir dir="${results.test.dir}" />
+		<mkdir dir="${ivy.lib.dir}" />
+		<javac srcdir="src" destdir="${build.classes}" debug="true">
+			<classpath refid="lib.path.id" />
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="build/jar/gwen-${publish.version}.jar">
+			<fileset dir="build/classes" />
+			<zipgroupfileset dir="${ivy.lib.dir}" includes="**/*.jar" />
+		</jar>
+	</target>
+
+	<property name="server.dist.dir" value="build/jar" />
+	<property name="ivy.repository"
+		value="dev3.int.midasplayer.com:/fjord/sites/ivy.dev.midasplayer.com/web/repository" />
+
+	<target name="publish" depends="resolve,jar">
+		<exec executable="scp">
+			<arg value="-r" />
+			<!-- Where to get the version from -->
+			<arg
+				value="${server.dist.dir}/gwen-${publish.version}.jar" />
+			<!-- Ivy Repo + FW package -->
+			<arg
+				value="${ivy.repository}/king/gwen/gwen-${publish.version}.jar" />
+		</exec>
+	</target>
+    
+    <target name="eclipse">
+		<taskdef name="eclipse" classname="prantl.ant.eclipse.EclipseTask" />
+		<eclipse>
+			<project />
+			<classpath>
+				<source path="src/" />
+				<output path="target/classes" />
+			</classpath>
+		</eclipse>
+	</target>
+
+</project>

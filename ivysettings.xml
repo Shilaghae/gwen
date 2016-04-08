@@ -1,0 +1,22 @@
+<ivysettings>
+	<settings defaultResolver="chain" />
+	<caches defaultCacheDir="${basedir}/ivy-cache" />
+
+	<resolvers>
+		<url name="king-internal">
+			<artifact
+				pattern="http://ivy.dev.midasplayer.com/repository/[organisation]/[module]/[artifact]-[revision].[ext]" />
+		</url>
+		<url name="king-internal2">
+			<artifact
+				pattern="http://ivy.dev.midasplayer.com/repository/[organisation]/[module]/[module]-[revision]/[artifact]-[revision].[ext]" />
+		</url>
+		
+		<chain name="chain">
+			<resolver ref="king-internal" />
+			<resolver ref="king-internal2" />
+			<ibiblio name="central" m2compatible="true" />
+			<ibiblio name="maven2" m2compatible="true" root="http://maven2.javacv.googlecode.com/git/" />
+		</chain>
+	</resolvers>
+</ivysettings>
